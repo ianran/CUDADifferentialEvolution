@@ -47,6 +47,7 @@ int main(void)
     DifferentialEvolution minimizer(192,500, 2, 0.9, 0.5, minBounds, maxBounds, d_func);
     
     cudaMemcpy(&d_x, (void *)&x, sizeof(struct data), cudaMemcpyHostToDevice);
+    
     std::vector<float> result = minimizer.fmin(&d_x);
     std::cout << "Result = " << result[0] << ", " << result[1] << std::endl;
     std::cout << "Finished main function." << std::endl;
