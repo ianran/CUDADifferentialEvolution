@@ -22,7 +22,6 @@
 
 #include <stdio.h>
 
-
 #include "DifferentialEvolution.hpp"
 #include <iostream>
 #include <vector>
@@ -37,14 +36,14 @@ int main(void)
     float maxBounds[2] = {75,101.4};
     
     struct data x;
-    struct data d_x;
-    cudaMalloc(&x.arr, sizeof(float) * 10);
+    struct data *d_x;
+    //cudaMalloc(&x.arr, sizeof(float) * 10);
     unsigned long size = sizeof(struct data);
-    cudaMalloc((void *)&d_x, size);
+    cudaMalloc((void **)&d_x, size);
     x.v = 0.5;
     x.dim = 2;
     
-    DifferentialEvolution minimizer(192,500, 2, 0.9, 0.5, minBounds, maxBounds, d_func);
+    DifferentialEvolution minimizer(32,5, 2, 0.9, 0.5, minBounds, maxBounds);
     
     cudaMemcpy(&d_x, (void *)&x, sizeof(struct data), cudaMemcpyHostToDevice);
     

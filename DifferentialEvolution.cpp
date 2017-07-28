@@ -36,14 +36,13 @@
 // @param func - the cost function to minimize.
 DifferentialEvolution::DifferentialEvolution(int PopulationSize, int NumGenerations,
         int Dimensions, float crossoverConstant, float mutantConstant,
-        float *minBounds, float *maxBounds, CostFunc_t func)
+        float *minBounds, float *maxBounds)
 {
     popSize = PopulationSize;
     dim = Dimensions;
     numGenerations = NumGenerations;
     CR = crossoverConstant*1000;
     F = mutantConstant;
-    costFunc = func;
     
     cudaMalloc(&d_target1, sizeof(float) * popSize * dim);
     cudaMalloc(&d_target2, sizeof(float) * popSize * dim);
@@ -65,7 +64,7 @@ std::vector<float> DifferentialEvolution::fmin(void *args)
 {
     std::vector<float> result(dim);
     
-    differentialEvolution(costFunc, d_target1, d_trial, d_cost, d_target2, d_min,
+    differentialEvolution(d_target1, d_trial, d_cost, d_target2, d_min,
             d_max, h_cost, d_randStates, dim, popSize, numGenerations, CR, F, args,
             result.data());
     

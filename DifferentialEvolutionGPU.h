@@ -23,8 +23,7 @@
 #ifndef __DIFFERENTIAL_EVOLUTION_GPU__
 #define __DIFFERENTIAL_EVOLUTION_GPU__
 
-void differentialEvolution(CostFunc_t costFunc,
-                           float *d_target,
+void differentialEvolution(float *d_target,
                            float *d_trial,
                            float *d_cost,
                            float *d_target2,

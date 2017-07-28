@@ -48,15 +48,17 @@
 // @param args - a set of user arguments.
 __device__ float costFunc(const float *vec, const void *args)
 {
-    const struct data *a = (struct data *)args;
+    //const struct data *a = (struct data *)args;
     float x = vec[0];
     float y = vec[1];
     //return (x*x*x*x)- (2*x*x*x)+25;
     //float z = (2*y)-2;
     //return (x*x*x*x)- (2*x*x*x) + (z*z*z*z) + (y*y*y);
     //return -46.78;
-    //return -(cos(x) + cos(y)) + 0.2*(x*x) + 0.2*(y*y);
-    return a->arr[2] + (x*x) + (y*y) + a->v;
+    return -(cos(x) + cos(y)) + 0.2*(x*x) + 0.2*(y*y);
+    //x = x -2;
+    //y = y -4;
+    //return a->arr[2] + (x*x) + (y*y) + a->v;
 }
 
 
@@ -86,25 +88,21 @@ void printCudaVector(float *d_vec, int size)
 }
 
 __global__ void generateRandomVectorAndInit(float *d_x, float *d_min, float *d_max,
-            float *d_cost, CostFunc_t costFuncPassed, void *costArgs, curandState_t *randStates,
+            float *d_cost, void *costArgs, curandState_t *randStates,
             int popSize, int dim, unsigned long seed)
 {
     int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
     if (idx >= popSize) return;
-    
-    float test[1] = {4};
     
     curandState_t *state = &randStates[idx];
     curand_init(seed, idx,0,state);
     for (int i = 0; i < dim; i++) {
         d_x[(idx*dim) + i] = (curand_uniform(state) * (d_max[i] - d_min[i])) + d_min[i];
     }
-    d_cost[idx] = costFunc(&d_x[idx*dim], costArgs);
-    //d_cost[idx] = costFunc(test, costArgs);
+    //d_cost[idx] = costFunc(&d_x[idx*dim], costArgs);
 }
 
-__global__ void evolutionKernel(CostFunc_t costFuncPassed,
-                                float *d_target,
+__global__ void evolutionKernel(float *d_target,
                                 float *d_trial,
                                 float *d_cost,
                                 float *d_target2,
@@ -152,8 +150,7 @@ __global__ void evolutionKernel(CostFunc_t costFuncPassed,
     }
 } // end differentialEvolution function.
 
-void differentialEvolution(CostFunc_t costFunc,
-                           float *d_target,
+void differentialEvolution(float *d_target,
                            float *d_trial,
                            float *d_cost,
                            float *d_target2,
@@ -170,27 +167,32 @@ void differentialEvolution(CostFunc_t costFunc,
                            float *h_output)
 {
     int power32 = ceil(popSize / 32.0) * 32;
-    //std::cout << "power32 = " << power32 << std::endl;
+    std::cout << "power32 = " << power32 << std::endl;
+    
+    std::cout << "min bounds = ";
+    printCudaVector(d_min, 2);
+    std::cout << "max bounds = ";
+    printCudaVector(d_max, 2);
     
     // generate random vector
     generateRandomVectorAndInit<<<1, power32>>>(d_target, d_min, d_max, d_cost,
-                    costFunc, costArgs, (curandState_t *)randStates, popSize, dim, clock());
+                    costArgs, (curandState_t *)randStates, popSize, dim, clock());
     
     cudaMemcpy(d_target2, d_target, sizeof(float) * dim * popSize, cudaMemcpyDeviceToDevice);
     
-    //printCudaVector(d_target, popSize*dim);
-    //printCudaVector(d_cost, popSize);
+    printCudaVector(d_target, popSize*dim);
+    printCudaVector(d_cost, popSize);
     
     for (int i = 1; i <= maxGenerations; i++) {
-        //std::cout << i << ": generation = \n";
-        //printCudaVector(d_target, popSize * dim);
-        //std::cout << "cost = ";
-        //printCudaVector(d_cost, popSize);
-        //std::cout << std::endl;
+        std::cout << i << ": generation = \n";
+        printCudaVector(d_target, popSize * dim);
+        std::cout << "cost = ";
+        printCudaVector(d_cost, popSize);
+        std::cout << std::endl;
         
         // start kernel for this generation
-        evolutionKernel<<<1, power32>>>(costFunc, d_target, d_trial, d_cost, d_target2, (curandState_t *)randStates,
-                                        dim, popSize, maxGenerations, CR, F, costArgs);
+        evolutionKernel<<<1, power32>>>(d_target, d_trial, d_cost, d_target2,
+                (curandState_t *)randStates, dim, popSize, maxGenerations, CR, F, costArgs);
         
         // swap buffers, places newest data into d_target.
         float *tmp = d_target;
@@ -200,20 +202,21 @@ void differentialEvolution(CostFunc_t costFunc,
     
     cudaMemcpy(h_cost, d_cost, popSize * sizeof(float), cudaMemcpyDeviceToHost);
     
-    //std::cout << "h_cost = {";
+    std::cout << "h_cost = {";
     
     // find min of last evolutions
     int bestIdx = -1;
     float bestCost = FLT_MAX;
     for (int i = 0; i < popSize; i++) {
         float curCost = h_cost[i];
-        //std::cout << curCost << ", ";
+        std::cout << curCost << ", ";
         if (curCost <= bestCost) {
             bestCost = curCost;
             bestIdx = i;
         }
     }
-    //std::cout << "}" << std::endl;
+    std::cout << "}" << std::endl;
+    std::cout << "Best cost = " << bestCost << std::endl;
     
     // output best minimization.
     cudaMemcpy(h_output, d_target+bestIdx, sizeof(float)*dim, cudaMemcpyDeviceToHost);

@@ -28,10 +28,9 @@
 #include <vector>
 #include <cuda_runtime.h>
 
-typedef float(*CostFunc_t)(const float *vec, const void *args);
 
 struct data {
-    float *arr;
+    //float *arr;
     float v;
     int dim;
 };
@@ -58,14 +57,11 @@ private:
     int numGenerations;
     float F;
     
-    
-    CostFunc_t costFunc;
-    
 public:
     
     DifferentialEvolution(int PopulationSize, int NumGenerations, int Dimensions,
                 float crossoverConstant, float mutantConstant,
-                float *minBounds, float *maxBounds, CostFunc_t func);
+                float *minBounds, float *maxBounds);
     
     std::vector<float> fmin(void *args);
     
