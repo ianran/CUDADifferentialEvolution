@@ -29,11 +29,11 @@
 #include <cuda_runtime.h>
 
 
-struct data {
+//struct data {
     //float *arr;
-    float v;
-    int dim;
-};
+    //float v;
+    //int dim;
+//};
 
 class DifferentialEvolution {
 private:

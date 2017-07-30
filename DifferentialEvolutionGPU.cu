@@ -19,6 +19,9 @@
 
 
 #include <curand_kernel.h>
+//#include <helper_cuda.h>
+
+
 #include <cuda_runtime.h>
 // for random numbers in a kernel
 #include "DifferentialEvolutionGPU.h"
@@ -49,13 +52,18 @@
 __device__ float costFunc(const float *vec, const void *args)
 {
     //const struct data *a = (struct data *)args;
-    float x = vec[0];
+    //float x = vec[0];
+    //float y = vec[1];
+    float x = vec[0]-3;
+    
     float y = vec[1];
+    //printf("x = %f, y = %f, cost = %f\n", vec[0],y,(x*x) + (y*y));
+    return (x*x) + (y*y);
     //return (x*x*x*x)- (2*x*x*x)+25;
     //float z = (2*y)-2;
     //return (x*x*x*x)- (2*x*x*x) + (z*z*z*z) + (y*y*y);
     //return -46.78;
-    return -(cos(x) + cos(y)) + 0.2*(x*x) + 0.2*(y*y);
+    //return -(cos(x) + cos(y)) + 0.2*(x*x) + 0.2*(y*y);
     //x = x -2;
     //y = y -4;
     //return a->arr[2] + (x*x) + (y*y) + a->v;
@@ -99,7 +107,7 @@ __global__ void generateRandomVectorAndInit(float *d_x, float *d_min, float *d_m
     for (int i = 0; i < dim; i++) {
         d_x[(idx*dim) + i] = (curand_uniform(state) * (d_max[i] - d_min[i])) + d_min[i];
     }
-    //d_cost[idx] = costFunc(&d_x[idx*dim], costArgs);
+    d_cost[idx] = costFunc(&d_x[idx*dim], costArgs);
 }
 
 __global__ void evolutionKernel(float *d_target,
@@ -145,8 +153,17 @@ __global__ void evolutionKernel(float *d_target,
     float score = costFunc(&d_trial[idx*dim], costArgs);
     if (score < d_cost[idx]) {
         // copy trial into new vector
-        for (j = 0; j < dim; j++) { d_target2[(idx*dim) + j] = d_trial[(idx*dim) + j]; }
+        for (j = 0; j < dim; j++) {
+            d_target2[(idx*dim) + j] = d_trial[(idx*dim) + j];
+            //printf("idx = %d, d_target2[%d] = %f, score = %f\n", idx, (idx*dim)+j, d_trial[(idx*dim) + j], score);
+        }
         d_cost[idx] = score;
+    } else {
+        // copy target to the second vector
+        for (j = 0; j < dim; j++) {
+            d_target2[(idx*dim) + j] = d_target[(idx*dim) + j];
+            //printf("idx = %d, d_target2[%d] = %f, score = %f\n", idx, (idx*dim)+j, d_trial[(idx*dim) + j], score);
+        }
     }
 } // end differentialEvolution function.
 
@@ -169,26 +186,26 @@ void differentialEvolution(float *d_target,
     int power32 = ceil(popSize / 32.0) * 32;
     std::cout << "power32 = " << power32 << std::endl;
     
-    std::cout << "min bounds = ";
-    printCudaVector(d_min, 2);
-    std::cout << "max bounds = ";
-    printCudaVector(d_max, 2);
+    //std::cout << "min bounds = ";
+    //printCudaVector(d_min, dim);
+    //std::cout << "max bounds = ";
+    //printCudaVector(d_max, dim);
     
     // generate random vector
     generateRandomVectorAndInit<<<1, power32>>>(d_target, d_min, d_max, d_cost,
                     costArgs, (curandState_t *)randStates, popSize, dim, clock());
     
-    cudaMemcpy(d_target2, d_target, sizeof(float) * dim * popSize, cudaMemcpyDeviceToDevice);
+    //udaMemcpy(d_target2, d_target, sizeof(float) * dim * popSize, cudaMemcpyDeviceToDevice);
     
-    printCudaVector(d_target, popSize*dim);
-    printCudaVector(d_cost, popSize);
+    //printCudaVector(d_target, popSize*dim);
+    //printCudaVector(d_cost, popSize);
     
     for (int i = 1; i <= maxGenerations; i++) {
-        std::cout << i << ": generation = \n";
-        printCudaVector(d_target, popSize * dim);
-        std::cout << "cost = ";
-        printCudaVector(d_cost, popSize);
-        std::cout << std::endl;
+        //std::cout << i << ": generation = \n";
+        //printCudaVector(d_target, popSize * dim);
+        //std::cout << "cost = ";
+        //printCudaVector(d_cost, popSize);
+        //std::cout << std::endl;
         
         // start kernel for this generation
         evolutionKernel<<<1, power32>>>(d_target, d_trial, d_cost, d_target2,
@@ -202,7 +219,7 @@ void differentialEvolution(float *d_target,
     
     cudaMemcpy(h_cost, d_cost, popSize * sizeof(float), cudaMemcpyDeviceToHost);
     
-    std::cout << "h_cost = {";
+    //std::cout << "h_cost = {";
     
     // find min of last evolutions
     int bestIdx = -1;
@@ -215,11 +232,15 @@ void differentialEvolution(float *d_target,
             bestIdx = i;
         }
     }
-    std::cout << "}" << std::endl;
-    std::cout << "Best cost = " << bestCost << std::endl;
+    //std::cout << "}" << std::endl;
+    
+    //std::cout << "\n\n agents = ";
+    //printCudaVector(d_target, popSize*dim);
+    
+    //std::cout << "Best cost = " << bestCost << " bestIdx = " << bestIdx << std::endl;
     
     // output best minimization.
-    cudaMemcpy(h_output, d_target+bestIdx, sizeof(float)*dim, cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_output, d_target+(bestIdx*dim), sizeof(float)*dim, cudaMemcpyDeviceToHost);
 }
 
 // allocate the memory needed for random number generators.

@@ -32,22 +32,22 @@
 int main(void)
 {
     
-    float minBounds[2] = {-5,-24.3};
-    float maxBounds[2] = {75,101.4};
+    float minBounds[2] = {-50, -50};
+    float maxBounds[2] = {100, 200};
     
-    struct data x;
-    struct data *d_x;
+    //struct data x;
+    //struct data *d_x;
     //cudaMalloc(&x.arr, sizeof(float) * 10);
-    unsigned long size = sizeof(struct data);
-    cudaMalloc((void **)&d_x, size);
-    x.v = 0.5;
-    x.dim = 2;
+    //unsigned long size = sizeof(struct data);
+    //cudaMalloc((void **)&d_x, size);
+    //x.v = 0.5;
+    //x.dim = 2;
     
-    DifferentialEvolution minimizer(32,5, 2, 0.9, 0.5, minBounds, maxBounds);
+    DifferentialEvolution minimizer(192,10, 2, 0.9, 0.5, minBounds, maxBounds);
     
-    cudaMemcpy(&d_x, (void *)&x, sizeof(struct data), cudaMemcpyHostToDevice);
+    //cudaMemcpy(&d_x, (void *)&x, sizeof(struct data), cudaMemcpyHostToDevice);
     
-    std::vector<float> result = minimizer.fmin(&d_x);
+    std::vector<float> result = minimizer.fmin(NULL);
     std::cout << "Result = " << result[0] << ", " << result[1] << std::endl;
     std::cout << "Finished main function." << std::endl;
     return 1;
