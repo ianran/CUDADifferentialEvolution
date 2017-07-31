@@ -35,19 +35,22 @@ int main(void)
     float minBounds[2] = {-50, -50};
     float maxBounds[2] = {100, 200};
     
-    //struct data x;
-    //struct data *d_x;
-    //cudaMalloc(&x.arr, sizeof(float) * 10);
-    //unsigned long size = sizeof(struct data);
-    //cudaMalloc((void **)&d_x, size);
-    //x.v = 0.5;
-    //x.dim = 2;
+    float arr[3] = {2.5, 2.6, 2.7};
     
-    DifferentialEvolution minimizer(192,10, 2, 0.9, 0.5, minBounds, maxBounds);
+    struct data x;
+    struct data *d_x;
+    gpuErrorCheck(cudaMalloc(&x.arr, sizeof(float) * 3));
+    unsigned long size = sizeof(struct data);
+    gpuErrorCheck(cudaMalloc((void **)&d_x, size));
+    x.v = 3;
+    x.dim = 2;
+    gpuErrorCheck(cudaMemcpy(x.arr, (void *)&arr, sizeof(float) * 3, cudaMemcpyHostToDevice));
     
-    //cudaMemcpy(&d_x, (void *)&x, sizeof(struct data), cudaMemcpyHostToDevice);
+    DifferentialEvolution minimizer(192,50, 2, 0.9, 0.5, minBounds, maxBounds);
     
-    std::vector<float> result = minimizer.fmin(NULL);
+    gpuErrorCheck(cudaMemcpy(d_x, (void *)&x, sizeof(struct data), cudaMemcpyHostToDevice));
+    
+    std::vector<float> result = minimizer.fmin(d_x);
     std::cout << "Result = " << result[0] << ", " << result[1] << std::endl;
     std::cout << "Finished main function." << std::endl;
     return 1;

@@ -43,18 +43,28 @@ DifferentialEvolution::DifferentialEvolution(int PopulationSize, int NumGenerati
     numGenerations = NumGenerations;
     CR = crossoverConstant*1000;
     F = mutantConstant;
+    cudaError_t ret;
     
-    cudaMalloc(&d_target1, sizeof(float) * popSize * dim);
-    cudaMalloc(&d_target2, sizeof(float) * popSize * dim);
-    cudaMalloc(&d_mutant, sizeof(float) * popSize * dim);
-    cudaMalloc(&d_trial, sizeof(float) * popSize * dim);
+    ret = cudaMalloc(&d_target1, sizeof(float) * popSize * dim);
+    gpuErrorCheck(ret);
+    ret = cudaMalloc(&d_target2, sizeof(float) * popSize * dim);
+    gpuErrorCheck(ret);
+    ret = cudaMalloc(&d_mutant, sizeof(float) * popSize * dim);
+    gpuErrorCheck(ret);
+    ret = cudaMalloc(&d_trial, sizeof(float) * popSize * dim);
+    gpuErrorCheck(ret);
     
-    cudaMalloc(&d_cost, sizeof(float) * PopulationSize);
+    ret = cudaMalloc(&d_cost, sizeof(float) * PopulationSize);
+    gpuErrorCheck(ret);
     
-    cudaMalloc(&d_min, sizeof(float) * dim);
-    cudaMalloc(&d_max, sizeof(float) * dim);
-    cudaMemcpy(d_min, minBounds, sizeof(float) * dim, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_max, maxBounds, sizeof(float) * dim, cudaMemcpyHostToDevice);
+    ret = cudaMalloc(&d_min, sizeof(float) * dim);
+    gpuErrorCheck(ret);
+    ret = cudaMalloc(&d_max, sizeof(float) * dim);
+    gpuErrorCheck(ret);
+    ret = cudaMemcpy(d_min, minBounds, sizeof(float) * dim, cudaMemcpyHostToDevice);
+    gpuErrorCheck(ret);
+    ret = cudaMemcpy(d_max, maxBounds, sizeof(float) * dim, cudaMemcpyHostToDevice);
+    gpuErrorCheck(ret);
     
     h_cost = new float[popSize * dim];
     d_randStates = createRandNumGen(popSize);

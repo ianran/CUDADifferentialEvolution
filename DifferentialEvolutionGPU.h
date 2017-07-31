@@ -23,6 +23,16 @@
 #ifndef __DIFFERENTIAL_EVOLUTION_GPU__
 #define __DIFFERENTIAL_EVOLUTION_GPU__
 
+#define QUADRATIC_COST 0
+#define COST_WITH_ARGS 1
+
+
+#define COST_SELECTOR COST_WITH_ARGS
+
+
+#define gpuErrorCheck(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+void gpuAssert(cudaError_t code, const char *file, int line);
+
 void differentialEvolution(float *d_target,
                            float *d_trial,
                            float *d_cost,

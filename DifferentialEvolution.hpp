@@ -27,13 +27,14 @@
 #include <stdio.h>
 #include <vector>
 #include <cuda_runtime.h>
+#include "DifferentialEvolutionGPU.h"
 
 
-//struct data {
-    //float *arr;
-    //float v;
-    //int dim;
-//};
+struct data {
+    float *arr;
+    float v;
+    int dim;
+};
 
 class DifferentialEvolution {
 private:
