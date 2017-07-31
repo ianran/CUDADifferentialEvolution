@@ -16,9 +16,11 @@
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+
 //
 //  testMain.cpp
 //
+// This is a test code to show an example usage of Differential Evolution
 
 #include <stdio.h>
 
@@ -31,12 +33,14 @@
 
 int main(void)
 {
-    
+    // create the min and max bounds for the search space.
     float minBounds[2] = {-50, -50};
     float maxBounds[2] = {100, 200};
     
+    // a random array or data that gets passed to the cost function.
     float arr[3] = {2.5, 2.6, 2.7};
     
+    // data that is created in host, then copied to a device version for use with the cost function.
     struct data x;
     struct data *d_x;
     gpuErrorCheck(cudaMalloc(&x.arr, sizeof(float) * 3));
@@ -46,10 +50,12 @@ int main(void)
     x.dim = 2;
     gpuErrorCheck(cudaMemcpy(x.arr, (void *)&arr, sizeof(float) * 3, cudaMemcpyHostToDevice));
     
+    // Create the minimizer with a popsize of 192, 50 generations, Dimensions = 2, CR = 0.9, F = 2
     DifferentialEvolution minimizer(192,50, 2, 0.9, 0.5, minBounds, maxBounds);
     
     gpuErrorCheck(cudaMemcpy(d_x, (void *)&x, sizeof(struct data), cudaMemcpyHostToDevice));
     
+    // get the result from the minimizer
     std::vector<float> result = minimizer.fmin(d_x);
     std::cout << "Result = " << result[0] << ", " << result[1] << std::endl;
     std::cout << "Finished main function." << std::endl;
