@@ -20,6 +20,47 @@
 //
 //  DifferentialEvolution.cpp
 //
+// This class is a wrapper to make calls to the cuda differential evolution code easier to work with.
+// It handles all of the internal memory allocation for the differential evolution and holds them
+// as device memory for the GPU
+//
+// Example wrapper usage:
+//
+// float mins[3] = {0,-1,-3.14};
+// float maxs[3] = {10,1,3.13};
+//
+// DifferentialEvolution minimizer(64,100, 3, 0.9, 0.5, mins, maxs);
+//
+// minimizer.fmin(NULL);
+//
+//////////////////////////////////////////////////////////////////////////////////////////////
+// However if needed to pass arguements then an example usage is:
+//
+// // create the min and max bounds for the search space.
+// float minBounds[2] = {-50, -50};
+// float maxBounds[2] = {100, 200};
+//
+// // a random array or data that gets passed to the cost function.
+// float arr[3] = {2.5, 2.6, 2.7};
+//
+// // data that is created in host, then copied to a device version for use with the cost function.
+// struct data x;
+// struct data *d_x;
+// gpuErrorCheck(cudaMalloc(&x.arr, sizeof(float) * 3));
+// unsigned long size = sizeof(struct data);
+// gpuErrorCheck(cudaMalloc((void **)&d_x, size));
+// x.v = 3;
+// x.dim = 2;
+// gpuErrorCheck(cudaMemcpy(x.arr, (void *)&arr, sizeof(float) * 3, cudaMemcpyHostToDevice));
+//
+// // Create the minimizer with a popsize of 192, 50 generations, Dimensions = 2, CR = 0.9, F = 2
+// DifferentialEvolution minimizer(192,50, 2, 0.9, 0.5, minBounds, maxBounds);
+//
+// gpuErrorCheck(cudaMemcpy(d_x, (void *)&x, sizeof(struct data), cudaMemcpyHostToDevice));
+//
+// // get the result from the minimizer
+// std::vector<float> result = minimizer.fmin(d_x);
+//
 
 #include "DifferentialEvolution.hpp"
 #include "DifferentialEvolutionGPU.h"
@@ -70,6 +111,12 @@ DifferentialEvolution::DifferentialEvolution(int PopulationSize, int NumGenerati
     d_randStates = createRandNumGen(popSize);
 }
 
+// fmin
+// wrapper to the cuda function C function for differential evolution.
+// @param args - this a pointer to arguments for the cost function.
+//      This MUST point to device memory or NULL.
+//
+// @return the best set of parameters
 std::vector<float> DifferentialEvolution::fmin(void *args)
 {
     std::vector<float> result(dim);

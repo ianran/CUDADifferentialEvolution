@@ -25,7 +25,9 @@ likly to give performance gains.
 
 HOW TO USE:
 To implement a new cost function write the cost function in DifferentialEvolutionGPU.cu with the header
+
 __device float fooCost(const float *vec, const void *args)
+
 @param vec - sample parameters for the cost function to give a score on.
 @param args - any set of arguements that can be passed at the minimization stage
 NOTE: args any memory given to the function must already be in device memory.
@@ -40,3 +42,18 @@ preprocessor directives switch statement
 #elif COST_SELECTOR == YOUR_COST_FUNCTION_SPECIFIER
      return yourCostFunctionName(vec, args);
 ...
+
+Either then setting up the cost function just use the C++ class wrapper
+like the example below.
+
+float mins[3] = {0,-1,-3.14};
+float maxs[3] = {10,1,3.13};
+
+DifferentialEvolution minimizer(64,100, 3, 0.9, 0.5, mins, maxs);
+
+
+
+minimizer.fmin(NULL);
+
+for more complicated usage of passing variables to the minimizer see testMain.cpp
+
